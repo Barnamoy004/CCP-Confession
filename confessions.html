@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confessions — CCP Confession</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/confessions.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="top-nav">
+      <a href="index.html">← Homepage</a>
+      <a href="submit.html">✦ Send a confession</a>
+    </nav>
+
+    <header class="list-header">
+      <p class="eyebrow">A COLLECTION OF THOUGHTS</p>
+      <h1>Confessions</h1>
+      <p class="muted">Messages shared anonymously, one little thought at a time.</p>
+    </header>
+
+    <section class="filters">
+      <input id="search" type="search" placeholder="Search confessions...">
+      <select id="categoryFilter">
+        <option>All categories</option>
+        <option>Love</option><option>Crush</option><option>Heartbreak</option>
+        <option>Funny</option><option>Emotional</option><option>College</option>
+        <option>Secret</option><option>Spicy</option><option>Other</option>
+      </select>
+      <select id="sort">
+        <option value="latest">Latest</option>
+        <option value="reacted">Most reacted</option>
+      </select>
+      <button id="randomBtn" class="btn btn-secondary full">🎲 Random</button>
+    </section>
+
+    <section id="feed" class="feed"></section>
+    <p id="loading" class="loading">Loading...</p>
+    <p id="empty" class="empty hidden">No confessions found.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — CCP Confession</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/admin.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="top-nav">
+      <a href="index.html">← CCP Confession</a>
+      <button id="logoutBtn" class="text-btn hidden">Log out</button>
+    </nav>
+
+    <section id="loginCard" class="card admin-login">
+      <p class="eyebrow">PRIVATE AREA</p>
+      <h2>Admin login</h2>
+      <p class="muted">Only your Supabase admin account should be able to access moderation.</p>
+      <form id="loginForm">
+        <label>Email</label>
+        <input id="email" type="email" autocomplete="email" required>
+        <label>Password</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn btn-primary full" type="submit">Log in</button>
+        <p id="loginStatus" class="status"></p>
+      </form>
+    </section>
+
+    <section id="adminPanel" class="hidden">
+      <header class="list-header left">
+        <p class="eyebrow">MODERATION DASHBOARD</p>
+        <h1>Pending confessions</h1>
+        <p class="muted">Review before anything becomes public.</p>
+      </header>
+      <div id="pendingFeed" class="feed"></div>
+      <p id="adminEmpty" class="empty hidden">Nothing is waiting for review.</p>
+    </section>
+  </div>
+</body>
+</html>

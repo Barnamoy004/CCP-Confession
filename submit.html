@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send a Confession — CCP Confession</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/submit.js" defer></script>
+</head>
+<body>
+  <div class="page-shell narrow">
+    <nav class="top-nav">
+      <a href="index.html">← Homepage</a>
+      <a href="confessions.html">✦ Confessions</a>
+    </nav>
+
+    <section class="card form-card">
+      <p class="eyebrow">ANONYMOUS CONFESSION</p>
+      <h2>Write something honest.</h2>
+      <p class="muted">Your confession will be reviewed before it can appear in public confessions.</p>
+
+      <form id="confessionForm">
+        <label for="message">Message</label>
+        <textarea id="message" maxlength="2000" required placeholder="Write your confession..."></textarea>
+        <div class="counter"><span id="counter">0</span>/2000</div>
+
+        <label for="category">Category</label>
+        <select id="category">
+          <option>Love</option>
+          <option>Crush</option>
+          <option>Heartbreak</option>
+          <option>Funny</option>
+          <option>Emotional</option>
+          <option>College</option>
+          <option>Secret</option>
+          <option>Spicy</option>
+          <option>Other</option>
+        </select>
+
+        <label for="nickname">Nickname <span class="optional">(optional)</span></label>
+        <input id="nickname" maxlength="40" placeholder="Anonymous">
+
+        <button class="btn btn-primary full" id="submitBtn" type="submit">Send anonymously</button>
+        <p id="formStatus" class="status" role="status"></p>
+      </form>
+    </section>
+  </div>
+</body>
+</html>
