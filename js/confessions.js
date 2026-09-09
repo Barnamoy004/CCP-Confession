@@ -8,9 +8,13 @@ const randomBtn = document.getElementById("randomBtn");
 
 let allConfessions = [];
 
-/* -------------------------
-   Helpers
-------------------------- */
+function totalReactions(c) {
+  return (c.heart || 0) +
+         (c.laugh || 0) +
+         (c.sad || 0) +
+         (c.eyes || 0) +
+         (c.skull || 0);
+}
 
 function esc(value) {
   const div = document.createElement("div");
@@ -26,134 +30,18 @@ function formatDate(date) {
   }).format(new Date(date));
 }
 
-/* -------------------------
-   Popup
-------------------------- */
-
-function createPopup() {
-  if (document.getElementById("confessionModal")) return;
-
-  const modal = document.createElement("div");
-
-  modal.id = "confessionModal";
-  modal.className = "confession-modal hidden";
-
-  modal.innerHTML = `
-    <div class="confession-modal-backdrop"></div>
-
-    <div class="confession-modal-box">
-      <button class="modal-close" aria-label="Close">×</button>
-
-      <div class="modal-pin"></div>
-
-      <div class="modal-message"></div>
-
-      <div class="modal-meta">
-        <span class="modal-category"></span>
-        <span class="modal-date"></span>
-      </div>
-
-      <div class="modal-bottom">
-        <span class="modal-author"></span>
-
-        <button class="modal-share">
-          ↗ Share
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  const close = () => {
-    modal.classList.add("hidden");
-    document.body.style.overflow = "";
-  };
-
-  modal.querySelector(".modal-close").addEventListener("click", close);
-
-  modal.querySelector(".confession-modal-backdrop")
-    .addEventListener("click", close);
-
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") close();
-  });
+/* Check whether this visitor already reacted to this confession */
+function hasReacted(id) {
+  return localStorage.getItem(`ccp-reacted-${id}`) !== null;
 }
 
-function openPopup(c) {
-  createPopup();
-
-  const modal = document.getElementById("confessionModal");
-
-  modal.querySelector(".modal-message").textContent =
-    c.message || "";
-
-  modal.querySelector(".modal-category").textContent =
-    c.category || "Other";
-
-  modal.querySelector(".modal-date").textContent =
-    formatDate(c.created_at);
-
-  modal.querySelector(".modal-author").textContent =
-    `— ${c.nickname || "Anonymous"}`;
-
-  const pin = modal.querySelector(".modal-pin");
-
-  if (c.pinned) {
-    pin.textContent = "📌 PINNED CONFESSION";
-    pin.style.display = "block";
-  } else {
-    pin.textContent = "";
-    pin.style.display = "none";
-  }
-
-  const shareButton = modal.querySelector(".modal-share");
-
-  shareButton.onclick = async () => {
-    const shareText =
-      `${c.message}\n\n— ${c.nickname || "Anonymous"}`;
-
-    const shareUrl =
-      `${window.location.origin}${window.location.pathname}#${c.id}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "CCP Confession",
-          text: shareText,
-          url: shareUrl
-        });
-      } else {
-        await navigator.clipboard.writeText(
-          `${shareText}\n${shareUrl}`
-        );
-
-        shareButton.textContent = "✓ Copied";
-
-        setTimeout(() => {
-          shareButton.textContent = "↗ Share";
-        }, 1500);
-      }
-    } catch (error) {
-      console.log("Share cancelled");
-    }
-  };
-
-  modal.classList.remove("hidden");
-  document.body.style.overflow = "hidden";
+function getReactedType(id) {
+  return localStorage.getItem(`ccp-reacted-${id}`);
 }
-
-/* -------------------------
-   Render
-------------------------- */
 
 function render(items) {
   feed.innerHTML = "";
-
-  empty.classList.toggle(
-    "hidden",
-    items.length !== 0
-  );
+  empty.classList.toggle("hidden", items.length !== 0);
 
   items.forEach(c => {
     const article = document.createElement("article");
@@ -162,80 +50,77 @@ function render(items) {
       "confession" + (c.pinned ? " pinned" : "");
 
     article.innerHTML = `
-      ${
-        c.pinned
-          ? `<div class="pin">📌 PINNED CONFESSION</div>`
-          : ""
-      }
+      ${c.pinned ? `<div class="pin">📌 PINNED CONFESSION</div>` : ""}
 
-      <div class="confession-text">
-        ${esc(c.message)}
-      </div>
+      <div class="confession-text">${esc(c.message)}</div>
 
       <div class="meta">
-        <span class="tag">
-          ${esc(c.category)}
-        </span>
+        <span class="tag">${esc(c.category)}</span>
+        <span class="tag">${totalReactions(c)} reactions</span>
+      </div>
+
+      <div class="reactions">
+        ${reactionButton(c, "heart", "❤️")}
+        ${reactionButton(c, "laugh", "😂")}
+        ${reactionButton(c, "sad", "🥺")}
+        ${reactionButton(c, "eyes", "👀")}
+        ${reactionButton(c, "skull", "💀")}
       </div>
 
       <div class="bottom-meta">
-        <span>
-          — ${esc(c.nickname || "Anonymous")}
-        </span>
-
-        <span>
-          ${formatDate(c.created_at)}
-        </span>
+        <span>— ${esc(c.nickname || "Anonymous")}</span>
+        <span>${formatDate(c.created_at)}</span>
       </div>
     `;
 
-    /* Click confession → Popup */
-    article.addEventListener("click", () => {
-      openPopup(c);
+    article.querySelectorAll(".reaction").forEach(btn => {
+      btn.addEventListener("click", () => {
+        react(c.id, btn.dataset.type);
+      });
     });
 
     feed.appendChild(article);
   });
 }
 
-/* -------------------------
-   Filters
-------------------------- */
+function reactionButton(c, type, emoji) {
+  const reactedType = getReactedType(c.id);
+  const alreadyReacted = reactedType !== null;
+
+  return `
+    <button
+      class="reaction ${reactedType === type ? "selected" : ""}"
+      data-type="${type}"
+      aria-label="React ${emoji}"
+      ${alreadyReacted ? "disabled" : ""}
+    >
+      ${emoji} ${c[type] || 0}
+    </button>
+  `;
+}
 
 function applyFilters() {
   const q = search.value.trim().toLowerCase();
   const cat = categoryFilter.value;
 
   let items = allConfessions.filter(c =>
-    (!q ||
-      c.message.toLowerCase().includes(q)) &&
-    (cat === "All categories" ||
-      c.category === cat)
+    (!q || c.message.toLowerCase().includes(q)) &&
+    (cat === "All categories" || c.category === cat)
   );
 
   if (sort.value === "reacted") {
-    /* Reaction removed.
-       Keep sorting option working
-       by treating all as equal. */
     items.sort(
-      (a, b) =>
-        new Date(b.created_at) -
-        new Date(a.created_at)
+      (a, b) => totalReactions(b) - totalReactions(a)
     );
   } else {
     items.sort(
       (a, b) =>
-        new Date(b.created_at) -
-        new Date(a.created_at)
+        new Date(b.created_at) - new Date(a.created_at)
     );
   }
 
   render(items);
 }
-
-/* -------------------------
-   Load confessions
-------------------------- */
 
 async function load() {
   if (!window.ccpReady) {
@@ -247,70 +132,70 @@ async function load() {
   const { data, error } = await ccp
     .from("confessions")
     .select(
-      "id,message,category,nickname,created_at,pinned"
+      "id,message,category,nickname,created_at,pinned,heart,laugh,sad,eyes,skull"
     )
     .eq("status", "approved")
-    .order("created_at", {
-      ascending: false
-    });
+    .order("created_at", { ascending: false });
 
   loading.classList.add("hidden");
 
   if (error) {
-    loading.textContent =
-      "Could not load confessions.";
-
+    loading.textContent = "Could not load confessions.";
     loading.classList.remove("hidden");
-
     console.error(error);
     return;
   }
 
   allConfessions = data || [];
+  applyFilters();
+}
+
+async function react(id, type) {
+
+  /* Already reacted to this confession */
+  if (hasReacted(id)) {
+    return;
+  }
+
+  const { error } = await ccp.rpc("add_reaction", {
+    confession_id: id,
+    reaction_type: type
+  });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  /* Save ONE reaction per confession */
+  localStorage.setItem(`ccp-reacted-${id}`, type);
+
+  const item = allConfessions.find(c => c.id === id);
+
+  if (item) {
+    item[type] = (item[type] || 0) + 1;
+  }
 
   applyFilters();
 }
 
-/* -------------------------
-   Search / Filter
-------------------------- */
-
-search.addEventListener(
-  "input",
-  applyFilters
-);
-
-categoryFilter.addEventListener(
-  "change",
-  applyFilters
-);
-
-sort.addEventListener(
-  "change",
-  applyFilters
-);
-
-/* -------------------------
-   Random
-------------------------- */
+search.addEventListener("input", applyFilters);
+categoryFilter.addEventListener("change", applyFilters);
+sort.addEventListener("change", applyFilters);
 
 randomBtn.addEventListener("click", () => {
   if (!allConfessions.length) return;
 
   const item =
     allConfessions[
-      Math.floor(
-        Math.random() *
-        allConfessions.length
-      )
+      Math.floor(Math.random() * allConfessions.length)
     ];
 
-  openPopup(item);
+  render([item]);
+
+  window.scrollTo({
+    top: document.querySelector(".feed").offsetTop - 20,
+    behavior: "smooth"
+  });
 });
-
-/* -------------------------
-   Start
-------------------------- */
-
-createPopup();
 load();
