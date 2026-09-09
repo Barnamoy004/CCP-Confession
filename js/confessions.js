@@ -8,14 +8,6 @@ const randomBtn = document.getElementById("randomBtn");
 
 let allConfessions = [];
 
-function totalReactions(c) {
-  return (c.heart || 0) +
-         (c.laugh || 0) +
-         (c.sad || 0) +
-         (c.eyes || 0) +
-         (c.skull || 0);
-}
-
 function esc(value) {
   const div = document.createElement("div");
   div.textContent = value ?? "";
@@ -28,15 +20,6 @@ function formatDate(date) {
     month: "short",
     year: "numeric"
   }).format(new Date(date));
-}
-
-/* Check whether this visitor already reacted to this confession */
-function hasReacted(id) {
-  return localStorage.getItem(`ccp-reacted-${id}`) !== null;
-}
-
-function getReactedType(id) {
-  return localStorage.getItem(`ccp-reacted-${id}`);
 }
 
 function render(items) {
@@ -52,19 +35,12 @@ function render(items) {
     article.innerHTML = `
       ${c.pinned ? `<div class="pin">📌 PINNED CONFESSION</div>` : ""}
 
-      <div class="confession-text">${esc(c.message)}</div>
+      <div class="confession-text">
+        ${esc(c.message)}
+      </div>
 
       <div class="meta">
         <span class="tag">${esc(c.category)}</span>
-        <span class="tag">${totalReactions(c)} reactions</span>
-      </div>
-
-      <div class="reactions">
-        ${reactionButton(c, "heart", "❤️")}
-        ${reactionButton(c, "laugh", "😂")}
-        ${reactionButton(c, "sad", "🥺")}
-        ${reactionButton(c, "eyes", "👀")}
-        ${reactionButton(c, "skull", "💀")}
       </div>
 
       <div class="bottom-meta">
@@ -73,30 +49,8 @@ function render(items) {
       </div>
     `;
 
-    article.querySelectorAll(".reaction").forEach(btn => {
-      btn.addEventListener("click", () => {
-        react(c.id, btn.dataset.type);
-      });
-    });
-
     feed.appendChild(article);
   });
-}
-
-function reactionButton(c, type, emoji) {
-  const reactedType = getReactedType(c.id);
-  const alreadyReacted = reactedType !== null;
-
-  return `
-    <button
-      class="reaction ${reactedType === type ? "selected" : ""}"
-      data-type="${type}"
-      aria-label="React ${emoji}"
-      ${alreadyReacted ? "disabled" : ""}
-    >
-      ${emoji} ${c[type] || 0}
-    </button>
-  `;
 }
 
 function applyFilters() {
@@ -108,9 +62,10 @@ function applyFilters() {
     (cat === "All categories" || c.category === cat)
   );
 
-  if (sort.value === "reacted") {
+  if (sort.value === "oldest") {
     items.sort(
-      (a, b) => totalReactions(b) - totalReactions(a)
+      (a, b) =>
+        new Date(a.created_at) - new Date(b.created_at)
     );
   } else {
     items.sort(
@@ -132,16 +87,20 @@ async function load() {
   const { data, error } = await ccp
     .from("confessions")
     .select(
-      "id,message,category,nickname,created_at,pinned,heart,laugh,sad,eyes,skull"
+      "id,message,category,nickname,created_at,pinned"
     )
     .eq("status", "approved")
-    .order("created_at", { ascending: false });
+    .order("created_at", {
+      ascending: false
+    });
 
   loading.classList.add("hidden");
 
   if (error) {
-    loading.textContent = "Could not load confessions.";
+    loading.textContent =
+      "Could not load confessions.";
     loading.classList.remove("hidden");
+
     console.error(error);
     return;
   }
@@ -150,51 +109,33 @@ async function load() {
   applyFilters();
 }
 
-async function react(id, type) {
-
-  /* Already reacted to this confession */
-  if (hasReacted(id)) {
-    return;
-  }
-
-  const { error } = await ccp.rpc("add_reaction", {
-    confession_id: id,
-    reaction_type: type
-  });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  /* Save ONE reaction per confession */
-  localStorage.setItem(`ccp-reacted-${id}`, type);
-
-  const item = allConfessions.find(c => c.id === id);
-
-  if (item) {
-    item[type] = (item[type] || 0) + 1;
-  }
-
-  applyFilters();
-}
-
 search.addEventListener("input", applyFilters);
-categoryFilter.addEventListener("change", applyFilters);
-sort.addEventListener("change", applyFilters);
+
+categoryFilter.addEventListener(
+  "change",
+  applyFilters
+);
+
+sort.addEventListener(
+  "change",
+  applyFilters
+);
 
 randomBtn.addEventListener("click", () => {
   if (!allConfessions.length) return;
 
   const item =
     allConfessions[
-      Math.floor(Math.random() * allConfessions.length)
+      Math.floor(
+        Math.random() * allConfessions.length
+      )
     ];
 
   render([item]);
 
   window.scrollTo({
-    top: document.querySelector(".feed").offsetTop - 20,
+    top:
+      document.querySelector(".feed").offsetTop - 20,
     behavior: "smooth"
   });
 });
